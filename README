@@ -1,0 +1,24 @@
+= BasicOSMParser =
+== Read-me ==
+BasicOSMParser is a collection of Java classes allowing to parse raw OSM XML files.
+Then you are able to manipulate those Java objects in your program. This library is
+very simple to understand. It uses the default Java SAX parser (org.xml.sax).
+The application tests use JUnit 4 framework.
+
+== License ==
+Copyright 2014 Adrien PAVIE
+
+See COPYING for complete GPL3 license.
+
+BasicOSMParser is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+BasicOSMParser is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with BasicOSMParser. If not, see <http://www.gnu.org/licenses/>.
