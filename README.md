@@ -12,7 +12,7 @@ The application tests use JUnit 4 framework.
 Installation
 ------------
 
-In order to use BasicOSMParser, you have to put the content of src/ folder in the
+In order to use BasicOSMParser, you have to put the content of src/main/ folder in the
 source directory of your project. Then, add this code in your classes to import the parser :
 
 ```
