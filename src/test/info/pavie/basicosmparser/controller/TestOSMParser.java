@@ -95,8 +95,8 @@ public class TestOSMParser {
 		assertEquals("unclassified", w1.getTags().get("highway"));
 		assertEquals("Pastower Straße", w1.getTags().get("name"));
 		assertEquals(3, w1.getNodes().size());
-		assertEquals(result.get("N292403538"), w1.getNodes().get(0));
-		assertEquals(result.get("N298884289"), w1.getNodes().get(1));
+		assertEquals(result.get("N298884269"), w1.getNodes().get(0));
+		assertEquals(result.get("N298884272"), w1.getNodes().get(1));
 		assertEquals(result.get("N261728686"), w1.getNodes().get(2));
 		
 		//Relation

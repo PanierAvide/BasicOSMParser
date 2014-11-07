@@ -9,8 +9,8 @@
  </node>
  <node id="298884272" lat="54.0901447" lon="12.2516513" user="SvenHRO" uid="46882" visible="true" version="1" changeset="676636" timestamp="2008-09-21T21:37:45Z"/>
  <way id="26659127" user="Masch" uid="55988" visible="true" version="5" changeset="4142606" timestamp="2010-03-16T11:47:08Z">
-  <nd ref="292403538"/>
-  <nd ref="298884289"/>
+  <nd ref="298884269"/>
+  <nd ref="298884272"/>
   <nd ref="261728686"/>
   <tag k="highway" v="unclassified"/>
   <tag k="name" v="Pastower Straße"/>

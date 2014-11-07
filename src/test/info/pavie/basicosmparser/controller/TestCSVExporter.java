@@ -52,9 +52,11 @@ public class TestCSVExporter {
 //TESTS
 	@Test
 	public void testExport() throws IOException {
-		File output = new File("test/out.csv");
+		File output = new File("test/");
 		exporter.export(data, output);
-		String result = readTextFile(output);
+		
+		//Test elements.csv
+		String result = readTextFile(new File(output.getPath()+File.separator+"elements.csv"));
 		String expected =
 "ID;UserID;timestamp;isVisible;version;changesetID;\"traffic_sign\";\"ref\";\"highway\";\"route\";\"name\";\"type\";\"network\";\"operator\"\n"+
 "N298884269;46882;2008-09-21T21:37:45Z;true;1;676636;null;null;null;null;null;null;null;null\n"+
@@ -63,6 +65,33 @@ public class TestCSVExporter {
 "N1831881213;75625;2012-07-20T09:43:19Z;true;1;12370172;\"city_limit\";null;null;null;\"Neu Broderstorf\";null;null;null\n"+
 "W26659127;55988;2010-03-16T11:47:08Z;true;5;4142606;null;null;\"unclassified\";null;\"Pastower Straße\";null;null;null\n"+
 "R56688;56190;2011-01-12T14:23:49Z;true;28;6947637;null;\"123\";null;\"bus\";\"Küstenbus Linie 123\";\"route\";\"VVW\";\"Regionalverkehr Küste\"\n"
+;
+		assertEquals(expected, result);
+		
+		//Test nodes.csv
+		result = readTextFile(new File(output.getPath()+File.separator+"nodes.csv"));
+		expected =
+"ID;latitude;longitude\n"+
+"N298884269;54.0901746;12.2482632\n"+
+"N298884272;54.0901447;12.2516513\n"+
+"N261728686;54.0906309;12.2441924\n"+
+"N1831881213;54.0900666;12.2539381\n"
+;
+		assertEquals(expected, result);
+		
+		//Test ways.csv
+		result = readTextFile(new File(output.getPath()+File.separator+"ways.csv"));
+		expected =
+"ID;nodes\n"+
+"W26659127;\"[N298884269,N298884272,N261728686]\"\n"
+;
+		assertEquals(expected, result);
+		
+		//Test relations.csv
+		result = readTextFile(new File(output.getPath()+File.separator+"relations.csv"));
+		expected =
+"ID;members;roles\n"+
+"R56688;\"[N298884269,N261728686,W26659127,N298884272]\",\"[stop,,path,]\"\n"
 ;
 		assertEquals(expected, result);
 	}

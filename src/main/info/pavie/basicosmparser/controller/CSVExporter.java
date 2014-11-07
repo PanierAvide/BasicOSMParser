@@ -20,6 +20,9 @@
 package info.pavie.basicosmparser.controller;
 
 import info.pavie.basicosmparser.model.Element;
+import info.pavie.basicosmparser.model.Node;
+import info.pavie.basicosmparser.model.Relation;
+import info.pavie.basicosmparser.model.Way;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -32,21 +35,23 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * This class allows you to export a Map of {@link Element}s as a CSV file.
- * Fields are separated with a ';'
+ * This class allows you to export a Map of {@link Element}s as several CSV files.
+ * Four CSV files are created : elements.csv, nodes.csv, ways.csv, relations.csv
+ * Elements.csv contains generic informations about all elements (ID, last user ID, timestamp, ..., and tags).
+ * Nodes.csv contains nodes coordinates.
+ * Ways.csv contains the nodes list for each way.
+ * Relations.csv contains the members list for each relation, and members roles.
  * @author Adrien PAVIE
  */
 public class CSVExporter {
 //OTHER METHODS
 	/**
-	 * Exports a map of Elements as a CSV file.
-	 * The CSV contains the following fields : object ID, last user ID, last edit timestamp,
-	 * 		is the object visible, the object version, the last changeset ID, and a column for each tag.
+	 * Exports a map of Elements as CSV files.
 	 * @param elements The element objects to export
-	 * @param csvOutput The file to write result in
+	 * @param outputFolder The folder where CSV files will be written
 	 * @throws IOException If an error occurs during CSV writing
 	 */
-	public void export(Map<String,Element> elements, File csvOutput) throws IOException {
+	public void export(Map<String,Element> elements, File outputFolder) throws IOException {
 		//Create the global tags map, which will contain all tags values for each element
 		Map<String,String> globalTags = new HashMap<String,String>(elements.size()*2);
 		
@@ -66,19 +71,25 @@ public class CSVExporter {
 		}
 		
 		//Create output
-		StringBuilder csvBuild = new StringBuilder();
-		csvBuild.append("ID;UserID;timestamp;isVisible;version;changesetID"); //Default columns
+		StringBuilder csvElementsBuild = new StringBuilder("ID;UserID;timestamp;isVisible;version;changesetID");
+		StringBuilder csvNodesBuild = new StringBuilder("ID;latitude;longitude");
+		StringBuilder csvWaysBuild = new StringBuilder("ID;nodes");
+		StringBuilder csvRelsBuild = new StringBuilder("ID;members;roles");
 
 		//Create columns for each used tag
 		String[] usedTagsOrdered = usedTags.toArray(new String[usedTags.size()]);
 		for(String tag : usedTagsOrdered) {
-			csvBuild.append(";\""+tag+"\"");
+			csvElementsBuild.append(";\""+tag+"\"");
 		}
 		
 		//Create CSV entries for each element
 		for(String id : elements.keySet()) {
 			currentElem = elements.get(id);
-			csvBuild.append('\n'+id+';'
+			
+			/*
+			 * Elements.csv content
+			 */
+			csvElementsBuild.append('\n'+id+';'
 					+currentElem.getUid()+';'
 					+currentElem.getTimestamp()+';'
 					+currentElem.isVisible()+';'
@@ -89,13 +100,74 @@ public class CSVExporter {
 			for(String tag : usedTagsOrdered) {
 				currentValue = globalTags.get(id+"-"+tag);
 				String toAppend = (currentValue == null) ? ";null" : ";\""+currentValue+"\"";
-				csvBuild.append(toAppend); //The value for given key, or null if undefined
+				csvElementsBuild.append(toAppend); //The value for given key, or null if undefined
+			}
+			
+			/*
+			 * Other csv content (depends of object type)
+			 */
+			if(currentElem instanceof Node) {
+				//Node element (define latitude, longitude)
+				Node currentNode = (Node) currentElem;
+				csvNodesBuild.append('\n'+id+';'+currentNode.getLat()+';'+currentNode.getLon());
+			}
+			else if(currentElem instanceof Way) {
+				//Way element (list nodes)
+				Way currentWay = (Way) currentElem;
+				csvWaysBuild.append('\n'+id+";\"["+
+				currentWay
+						.getNodes()
+						.get(0)
+						.getId());
+				
+				for(int i=1; i < currentWay.getNodes().size(); i++) {
+					csvWaysBuild.append(","+currentWay.getNodes().get(i).getId());
+				}
+				
+				csvWaysBuild.append("]\"");
+			}
+			else if(currentElem instanceof Relation) {
+				//Relation element (list members and roles)
+				Relation currentRel = (Relation) currentElem;
+				csvRelsBuild.append('\n'+id+";\"["+currentRel.getMembers().get(0).getId());
+				
+				//List members
+				for(int i=1; i < currentRel.getMembers().size(); i++) {
+					csvRelsBuild.append(","+currentRel.getMembers().get(i).getId());
+				}
+				csvRelsBuild.append("]\",\"["+currentRel.getMemberRole(currentRel.getMembers().get(0)));
+				
+				//List roles
+				for(int i=1; i < currentRel.getMembers().size(); i++) {
+					csvRelsBuild.append(","+currentRel.getMemberRole(currentRel.getMembers().get(i)));
+				}
+				csvRelsBuild.append("]\"");
+			}
+			else {
+				throw new RuntimeException("Unexpected kind of Element: "+currentElem.getClass().toString());
 			}
 		}
 		
 		//Write CSV
-		Writer w = new OutputStreamWriter(new FileOutputStream(csvOutput));
-		w.write(csvBuild.toString());
+		File csvElements = new File(outputFolder.getPath()+File.separator+"elements.csv");
+		File csvNodes = new File(outputFolder.getPath()+File.separator+"nodes.csv");
+		File csvWays = new File(outputFolder.getPath()+File.separator+"ways.csv");
+		File csvRels = new File(outputFolder.getPath()+File.separator+"relations.csv");
+		writeTextFile(csvElements, csvElementsBuild.toString());
+		writeTextFile(csvNodes, csvNodesBuild.toString());
+		writeTextFile(csvWays, csvWaysBuild.toString());
+		writeTextFile(csvRels, csvRelsBuild.toString());
+	}
+	
+	/**
+	 * Writes a text file.
+	 * @param output The file to write in
+	 * @param text The text to write
+	 * @throws IOException If an error occurs during writing
+	 */
+	private void writeTextFile(File output, String text) throws IOException {
+		Writer w = new OutputStreamWriter(new FileOutputStream(output));
+		w.write(text);
 		w.close();
 	}
 }
