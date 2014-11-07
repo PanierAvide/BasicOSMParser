@@ -135,7 +135,7 @@ public class CSVExporter {
 				for(int i=1; i < currentRel.getMembers().size(); i++) {
 					csvRelsBuild.append(","+currentRel.getMembers().get(i).getId());
 				}
-				csvRelsBuild.append("]\",\"["+currentRel.getMemberRole(currentRel.getMembers().get(0)));
+				csvRelsBuild.append("]\";\"["+currentRel.getMemberRole(currentRel.getMembers().get(0)));
 				
 				//List roles
 				for(int i=1; i < currentRel.getMembers().size(); i++) {

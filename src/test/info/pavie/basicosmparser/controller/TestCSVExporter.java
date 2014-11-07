@@ -91,7 +91,7 @@ public class TestCSVExporter {
 		result = readTextFile(new File(output.getPath()+File.separator+"relations.csv"));
 		expected =
 "ID;members;roles\n"+
-"R56688;\"[N298884269,N261728686,W26659127,N298884272]\",\"[stop,,path,]\"\n"
+"R56688;\"[N298884269,N261728686,W26659127,N298884272]\";\"[stop,,path,]\"\n"
 ;
 		assertEquals(expected, result);
 	}
