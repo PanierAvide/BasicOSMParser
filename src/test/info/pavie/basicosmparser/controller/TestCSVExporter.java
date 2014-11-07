@@ -19,12 +19,14 @@
 
 package info.pavie.basicosmparser.controller;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertEquals;
 import info.pavie.basicosmparser.model.Element;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Scanner;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -50,7 +52,35 @@ public class TestCSVExporter {
 //TESTS
 	@Test
 	public void testExport() throws IOException {
-		exporter.export(data, new File("test/out.csv"));
-		fail("Not yet implemented");
+		File output = new File("test/out.csv");
+		exporter.export(data, output);
+		String result = readTextFile(output);
+		String expected =
+"ID;UserID;timestamp;isVisible;version;changesetID;\"traffic_sign\";\"ref\";\"highway\";\"route\";\"name\";\"type\";\"network\";\"operator\"\n"+
+"N298884269;46882;2008-09-21T21:37:45Z;true;1;676636;null;null;null;null;null;null;null;null\n"+
+"N298884272;46882;2008-09-21T21:37:45Z;true;1;676636;null;null;null;null;null;null;null;null\n"+
+"N261728686;36744;2008-05-03T13:39:23Z;true;1;323878;null;null;null;null;null;null;null;null\n"+
+"N1831881213;75625;2012-07-20T09:43:19Z;true;1;12370172;\"city_limit\";null;null;null;\"Neu Broderstorf\";null;null;null\n"+
+"W26659127;55988;2010-03-16T11:47:08Z;true;5;4142606;null;null;\"unclassified\";null;\"Pastower Straße\";null;null;null\n"+
+"R56688;56190;2011-01-12T14:23:49Z;true;28;6947637;null;\"123\";null;\"bus\";\"Küstenbus Linie 123\";\"route\";\"VVW\";\"Regionalverkehr Küste\"\n"
+;
+		assertEquals(expected, result);
+	}
+
+//OTHER METHODS
+	/**
+	 * Reads a text file, and returns it as a string
+	 * @param f The text file to read
+	 * @return The read text
+	 * @throws FileNotFoundException If file doesn't exist
+	 */
+	private String readTextFile(File f) throws FileNotFoundException {
+		Scanner s = new Scanner(f);
+		StringBuilder result = new StringBuilder();
+		while(s.hasNextLine()) {
+			result.append(s.nextLine()+"\n");
+		}
+		s.close();
+		return result.toString();
 	}
 }

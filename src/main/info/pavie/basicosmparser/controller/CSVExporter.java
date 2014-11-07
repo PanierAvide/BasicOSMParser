@@ -85,8 +85,11 @@ public class CSVExporter {
 					+currentElem.getVersion()+';'
 					+currentElem.getChangeset());
 			
+			String currentValue;
 			for(String tag : usedTagsOrdered) {
-				csvBuild.append(";\""+globalTags.get(id+"-"+tag)+"\""); //The value for given key, or null if undefined
+				currentValue = globalTags.get(id+"-"+tag);
+				String toAppend = (currentValue == null) ? ";null" : ";\""+currentValue+"\"";
+				csvBuild.append(toAppend); //The value for given key, or null if undefined
 			}
 		}
 		
