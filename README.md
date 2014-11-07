@@ -47,6 +47,16 @@ The read OSM objects are represented by Element objects, which can be Node, Way 
 OSM object. You can access the different attributes of objects : ID, user ID, timestamp, version, object tags, ...
 See the Javadoc of these classes for more details about the available methods.
 
+If you want to get parsed data as a CSV file, use a <code>CSVExporter</code> object :
+
+```
+Map<String,Element> result = p.parse(osmFile);
+CSVExporter exporter = new CSVExporter();
+exporter.export(result, new File("/path/to/output.csv"));	//Throws IOException if error occurs during writing
+```
+
+See the Javadoc of CSVExporter to know more about output CSV format.
+
 License
 -------
 
