@@ -29,15 +29,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * This class allows you to export a Map of {@link Element}s as several CSV files.
- * Four CSV files are created : elements.csv, nodes.csv, ways.csv, relations.csv
- * Elements.csv contains generic informations about all elements (ID, last user ID, timestamp, ..., and tags).
+ * Three CSV files are created :  nodes.csv, ways.csv, relations.csv
+ * Those three CSV all contain generic informations about all elements (ID, last user ID, timestamp, ..., and tags).
  * Nodes.csv contains nodes coordinates.
  * Ways.csv contains the nodes list for each way.
  * Relations.csv contains the members list for each relation, and members roles.
@@ -52,69 +49,35 @@ public class CSVExporter {
 	 * @throws IOException If an error occurs during CSV writing
 	 */
 	public void export(Map<String,Element> elements, File outputFolder) throws IOException {
-		//Create the global tags map, which will contain all tags values for each element
-		Map<String,String> globalTags = new HashMap<String,String>(elements.size()*2);
-		
-		//Create the set of all used tags
-		Set<String> usedTags = new HashSet<String>();
-		
-		//Fill these with current data
 		Element currentElem = null;
-		for(String id : elements.keySet()) {
-			currentElem = elements.get(id);
-			usedTags.addAll(currentElem.getTags().keySet()); //Add all keys to usedTags
-			
-			//Create entries in globalTags
-			for(String key : currentElem.getTags().keySet()) {
-				globalTags.put(currentElem.getId()+"-"+key, currentElem.getTags().get(key));
-			}
-		}
 		
 		//Create output
-		StringBuilder csvElementsBuild = new StringBuilder("ID;UserID;timestamp;isVisible;version;changesetID");
-		StringBuilder csvNodesBuild = new StringBuilder("ID;latitude;longitude");
-		StringBuilder csvWaysBuild = new StringBuilder("ID;nodes");
-		StringBuilder csvRelsBuild = new StringBuilder("ID;members;roles");
+		StringBuilder csvNodesBuild = new StringBuilder("ID;UserID;timestamp;isVisible;version;changesetID;latitude;longitude;tags");
+		StringBuilder csvWaysBuild = new StringBuilder("ID;UserID;timestamp;isVisible;version;changesetID;nodes;tags");
+		StringBuilder csvRelsBuild = new StringBuilder("ID;UserID;timestamp;isVisible;version;changesetID;members;tags");
 
-		//Create columns for each used tag
-		String[] usedTagsOrdered = usedTags.toArray(new String[usedTags.size()]);
-		for(String tag : usedTagsOrdered) {
-			csvElementsBuild.append(";\""+tag+"\"");
-		}
-		
 		//Create CSV entries for each element
 		for(String id : elements.keySet()) {
 			currentElem = elements.get(id);
 			
 			/*
-			 * Elements.csv content
-			 */
-			csvElementsBuild.append('\n'+id+';'
-					+currentElem.getUid()+';'
-					+currentElem.getTimestamp()+';'
-					+currentElem.isVisible()+';'
-					+currentElem.getVersion()+';'
-					+currentElem.getChangeset());
-			
-			String currentValue;
-			for(String tag : usedTagsOrdered) {
-				currentValue = globalTags.get(id+"-"+tag);
-				String toAppend = (currentValue == null) ? ";null" : ";\""+currentValue+"\"";
-				csvElementsBuild.append(toAppend); //The value for given key, or null if undefined
-			}
-			
-			/*
-			 * Other csv content (depends of object type)
+			 * CSV content (depends of object type)
 			 */
 			if(currentElem instanceof Node) {
 				//Node element (define latitude, longitude)
 				Node currentNode = (Node) currentElem;
-				csvNodesBuild.append('\n'+id+';'+currentNode.getLat()+';'+currentNode.getLon());
+				addInformations(csvNodesBuild, currentElem);
+				
+				csvNodesBuild.append(";"+currentNode.getLat()+";"+currentNode.getLon()+";");
+				
+				addTags(csvNodesBuild, currentElem);
 			}
 			else if(currentElem instanceof Way) {
 				//Way element (list nodes)
 				Way currentWay = (Way) currentElem;
-				csvWaysBuild.append('\n'+id+";\"["+
+				addInformations(csvWaysBuild, currentElem);
+				
+				csvWaysBuild.append(";\"["+
 				currentWay
 						.getNodes()
 						.get(0)
@@ -124,24 +87,33 @@ public class CSVExporter {
 					csvWaysBuild.append(","+currentWay.getNodes().get(i).getId());
 				}
 				
-				csvWaysBuild.append("]\"");
+				csvWaysBuild.append("]\";");
+				
+				addTags(csvWaysBuild, currentElem);
 			}
 			else if(currentElem instanceof Relation) {
 				//Relation element (list members and roles)
 				Relation currentRel = (Relation) currentElem;
-				csvRelsBuild.append('\n'+id+";\"["+currentRel.getMembers().get(0).getId());
+				addInformations(csvRelsBuild, currentElem);
 				
-				//List members
-				for(int i=1; i < currentRel.getMembers().size(); i++) {
-					csvRelsBuild.append(","+currentRel.getMembers().get(i).getId());
-				}
-				csvRelsBuild.append("]\";\"["+currentRel.getMemberRole(currentRel.getMembers().get(0)));
+				csvRelsBuild.append(";\"["
+						+currentRel.getMembers().get(0).getId()
+						+"="+currentRel.getMemberRole(currentRel.getMembers().get(0)));
 				
-				//List roles
+				//List members and roles
 				for(int i=1; i < currentRel.getMembers().size(); i++) {
-					csvRelsBuild.append(","+currentRel.getMemberRole(currentRel.getMembers().get(i)));
+					//Member
+					csvRelsBuild.append(","+currentRel.getMembers().get(i).getId()
+							+"=");
+					
+					//Role
+					String role = currentRel.getMemberRole(currentRel.getMembers().get(i));
+					if(role.equals("")) { role = "null"; }
+					csvRelsBuild.append(role);
 				}
-				csvRelsBuild.append("]\"");
+				csvRelsBuild.append("]\";");
+				
+				addTags(csvRelsBuild, currentElem);
 			}
 			else {
 				throw new RuntimeException("Unexpected kind of Element: "+currentElem.getClass().toString());
@@ -149,14 +121,52 @@ public class CSVExporter {
 		}
 		
 		//Write CSV
-		File csvElements = new File(outputFolder.getPath()+File.separator+"elements.csv");
 		File csvNodes = new File(outputFolder.getPath()+File.separator+"nodes.csv");
 		File csvWays = new File(outputFolder.getPath()+File.separator+"ways.csv");
 		File csvRels = new File(outputFolder.getPath()+File.separator+"relations.csv");
-		writeTextFile(csvElements, csvElementsBuild.toString());
 		writeTextFile(csvNodes, csvNodesBuild.toString());
 		writeTextFile(csvWays, csvWaysBuild.toString());
 		writeTextFile(csvRels, csvRelsBuild.toString());
+	}
+	
+	/**
+	 * Adds the tags of an Element in the given StringBuilder
+	 * @param sb The string builder
+	 * @param elem The element
+	 */
+	private void addTags(StringBuilder sb, Element elem) {
+		//Start tags array
+		sb.append("\"[");
+		
+		boolean firstTag = true;
+		
+		//Add each tag
+		for(String key : elem.getTags().keySet()) {
+			if(!firstTag) {
+				sb.append(",");
+			} else {
+				firstTag = false;
+			}
+			
+			sb.append(key+"="+elem.getTags().get(key));
+		}
+		
+		//End array
+		sb.append("]\"");
+	}
+	
+	/**
+	 * Adds common informations about a Element in a StringBuilder
+	 * @param sb The string builder
+	 * @param elem The element
+	 */
+	private void addInformations(StringBuilder sb, Element elem) {
+		sb.append('\n'+elem.getId()+';'
+				+elem.getUid()+';'
+				+elem.getTimestamp()+';'
+				+elem.isVisible()+';'
+				+elem.getVersion()+';'
+				+elem.getChangeset());
 	}
 	
 	/**
