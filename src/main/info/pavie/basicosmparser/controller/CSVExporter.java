@@ -96,14 +96,16 @@ public class CSVExporter {
 				Relation currentRel = (Relation) currentElem;
 				addInformations(csvRelsBuild, currentElem);
 				
-				csvRelsBuild.append(";\"["
-						+currentRel.getMembers().get(0).getId()
-						+"="+currentRel.getMemberRole(currentRel.getMembers().get(0)));
+				csvRelsBuild.append(";\"[");
 				
 				//List members and roles
-				for(int i=1; i < currentRel.getMembers().size(); i++) {
+				for(int i=0; i < currentRel.getMembers().size(); i++) {
+					if(i > 0) {
+						csvRelsBuild.append(",");
+					}
+					
 					//Member
-					csvRelsBuild.append(","+currentRel.getMembers().get(i).getId()
+					csvRelsBuild.append(currentRel.getMembers().get(i).getId()
 							+"=");
 					
 					//Role
