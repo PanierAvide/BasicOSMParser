@@ -17,12 +17,11 @@
 	along with BasicOSMParser. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package info.pavie.basicosmparser.controller;
+package info.pavie.basicosmparser.controller.hive;
 
+import info.pavie.basicosmparser.controller.OSMParser;
 import info.pavie.basicosmparser.model.Element;
-import info.pavie.basicosmparser.model.Node;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
@@ -31,31 +30,33 @@ import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDTF;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
-import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
 import org.xml.sax.SAXException;
  
 /**
- * This class reads an OSM XML file, and creates rows for Hive (Nodes only).
- * To use it, you need to have a JAR of this application, and in Hive :
- * ADD JAR /path/to/basicosmparser.jar;
- * CREATE TEMPORARY FUNCTION OSMImportNodes AS 'info.pavie.basicosmparser.controller.HiveExporter';
- * SELECT OSMImportNodes("/path/to/data.osm");
+ * Abstract class, containing common functions to all Hive exporters.
+ * See each heriting class for more details.
  * @author Adrien PAVIE
  */
-public class HiveExporter extends GenericUDTF {
+public abstract class HiveExporter extends GenericUDTF {
 //ATTRIBUTES
 	/** Hive String Handler **/
-	StringObjectInspector stringOI;
+	protected StringObjectInspector stringOI;
 	
-	/** OSM XML file path **/
-	String osmFile;
+	/** OSM XML file content **/
+	protected StringBuilder osmContent;
+	
+	/** Parsed OSM elements **/
+	protected Map<String,Element> elements;
 	
 //OTHER METHODS
-	@Override
-	public StructObjectInspector initialize(ObjectInspector[] argOIs) throws UDFArgumentException {
+	/**
+	 * Checks if hive function call is valid, and defines stringOI attribute.
+	 * @param argOIs The hive function arguments
+	 * @throws UDFArgumentException If function call is invalid
+	 */
+	protected void checkParameterOI(ObjectInspector[] argOIs) throws UDFArgumentException {
 		if(argOIs.length != 1) {
 			throw new UDFArgumentException("HiveExporter UDTF takes 1 argument: STRING");
 		}
@@ -67,10 +68,14 @@ public class HiveExporter extends GenericUDTF {
 		}
 		
 		this.stringOI = (StringObjectInspector) arg1;
-		
-		//Expected output columns
+		this.osmContent = new StringBuilder();
+	}
+	
+	/**
+	 * @return The common field names (ID, UserID, Timestamp, ...).
+	 */
+	protected ArrayList<String> getCommonFieldNames() {
 		ArrayList<String> fieldNames = new ArrayList<String>();
-		ArrayList<ObjectInspector> fieldOIs = new ArrayList<ObjectInspector>();
 		fieldNames.add("ID");
 		fieldNames.add("UserID");
 		fieldNames.add("Timestamp");
@@ -78,10 +83,15 @@ public class HiveExporter extends GenericUDTF {
 		fieldNames.add("Version");
 		fieldNames.add("ChangesetID");
 		fieldNames.add("Tags");
-		fieldNames.add("Latitude");
-		fieldNames.add("Longitude");
 		
-		//Expected output types
+		return fieldNames;
+	}
+	
+	/**
+	 * @return The common field object inspectors (for ID, UserID, Timestamp, ...)
+	 */
+	protected ArrayList<ObjectInspector> getCommonFieldOIs() {
+		ArrayList<ObjectInspector> fieldOIs = new ArrayList<ObjectInspector>();
 		fieldOIs.add(PrimitiveObjectInspectorFactory.javaStringObjectInspector);
 		fieldOIs.add(PrimitiveObjectInspectorFactory.javaLongObjectInspector);
 		fieldOIs.add(PrimitiveObjectInspectorFactory.javaStringObjectInspector);
@@ -89,65 +99,60 @@ public class HiveExporter extends GenericUDTF {
 		fieldOIs.add(PrimitiveObjectInspectorFactory.javaIntObjectInspector);
 		fieldOIs.add(PrimitiveObjectInspectorFactory.javaLongObjectInspector);
 		fieldOIs.add(PrimitiveObjectInspectorFactory.javaStringObjectInspector);
-		fieldOIs.add(PrimitiveObjectInspectorFactory.javaDoubleObjectInspector);
-		fieldOIs.add(PrimitiveObjectInspectorFactory.javaDoubleObjectInspector);
 		
-		return ObjectInspectorFactory.getStandardStructObjectInspector(fieldNames, fieldOIs);
-	}
-
-	@Override
-	public void process(Object[] args) throws HiveException {
-		//Get XML file path
-		osmFile = (String) stringOI.getPrimitiveJavaObject(args[0]);
+		return fieldOIs;
 	}
 	
 	@Override
-	public void close() throws HiveException {
-		if(osmFile == null) {
+	public void process(Object[] args) throws HiveException {
+		//Get XML file content
+		osmContent.append((String) stringOI.getPrimitiveJavaObject(args[0]));
+	}
+	
+	/**
+	 * Once osmFile attribute is defined, you can call this function to fill elements attribute with read data.
+	 * @throws HiveException If an error occurs during parsing.
+	 */
+	protected void parseData() throws HiveException {
+		if(osmContent == null) {
 			throw new HiveException("Undefined OSM XML file");
 		}
 		
 		OSMParser parser = new OSMParser();
+
 		try {
-			Map<String,Element> elements = parser.parse(new File(osmFile));
-			
-			//Read nodes, an create row for each one.
-			for(String id : elements.keySet()) {
-				Element current = elements.get(id);
-				
-				if(current instanceof Node) {
-					//General information
-					Object[] currentRow = new Object[9];
-					currentRow[0] = id;
-					currentRow[1] = current.getUid();
-					currentRow[2] = current.getTimestamp();
-					currentRow[3] = current.isVisible();
-					currentRow[4] = current.getVersion();
-					currentRow[5] = current.getChangeset();
-					currentRow[7] = ((Node) current).getLat();
-					currentRow[8] = ((Node) current).getLon();
-					
-					//Save tags as an array
-					StringBuilder tags = new StringBuilder("[");
-					boolean firstTag = true;
-					for(String key : current.getTags().keySet()) {
-						if(!firstTag) {
-							tags.append(",");
-						} else {
-							firstTag = false;
-						}
-						
-						tags.append(key+"="+current.getTags().get(key));
-					}
-					tags.append("]");
-					currentRow[6] = tags.toString();
-					
-					//Write into standard output
-					forward(currentRow);
-				}
-			}
+			elements = parser.parse(osmContent.toString());
 		} catch (IOException | SAXException e) {
 			throw new HiveException(e);
 		}
+	}
+	
+	/**
+	 * This methods fills a row array with common data extracted from the given element.
+	 * @param row The row array (size should be > 7)
+	 * @param elem The element to use
+	 */
+	protected void fillRow(Object[] row, Element elem) {
+		row[0] = elem.getId();
+		row[1] = elem.getUid();
+		row[2] = elem.getTimestamp();
+		row[3] = elem.isVisible();
+		row[4] = elem.getVersion();
+		row[5] = elem.getChangeset();
+		
+		//Save tags as an array
+		StringBuilder tags = new StringBuilder("[");
+		boolean firstTag = true;
+		for(String key : elem.getTags().keySet()) {
+			if(!firstTag) {
+				tags.append(",");
+			} else {
+				firstTag = false;
+			}
+			
+			tags.append(key+"="+elem.getTags().get(key));
+		}
+		tags.append("]");
+		row[6] = tags.toString();
 	}
 }

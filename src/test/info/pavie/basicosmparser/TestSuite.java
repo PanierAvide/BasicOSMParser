@@ -19,6 +19,10 @@
 
 package info.pavie.basicosmparser;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
 import info.pavie.basicosmparser.controller.TestCSVExporter;
 import info.pavie.basicosmparser.controller.TestOSMParser;
 
@@ -32,5 +36,20 @@ import org.junit.runners.Suite;
 		})
 
 public class TestSuite {
-  //nothing
+//OTHER METHODS
+	/**
+	 * Reads a text file, and returns it as a string
+	 * @param f The text file to read
+	 * @return The read text
+	 * @throws FileNotFoundException If file doesn't exist
+	 */
+	public static String readTextFile(File f) throws FileNotFoundException {
+		Scanner s = new Scanner(f);
+		StringBuilder result = new StringBuilder();
+		while(s.hasNextLine()) {
+			result.append(s.nextLine()+"\n");
+		}
+		s.close();
+		return result.toString();
+	}
 }

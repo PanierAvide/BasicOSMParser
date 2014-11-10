@@ -21,18 +21,20 @@ package info.pavie.basicosmparser.controller;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import info.pavie.basicosmparser.controller.OSMParser;
+import info.pavie.basicosmparser.TestSuite;
 import info.pavie.basicosmparser.model.Element;
 import info.pavie.basicosmparser.model.Node;
 import info.pavie.basicosmparser.model.Relation;
 import info.pavie.basicosmparser.model.Way;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
@@ -52,11 +54,10 @@ public class TestOSMParser {
 
 //TESTS
 // parse()
-	@Test
-	public void testParse() throws IOException, SAXException {
-		// TODO
-		result = p1.parse(new File("test/xml/sample.osm"));
-		
+	/**
+	 * Test data from sample.osm
+	 */
+	private void testSampleFile() {
 		//First node
 		Node n1 = (Node) result.get("N298884269");
 		assertEquals(54.0901746, n1.getLat(), 0);
@@ -121,6 +122,26 @@ public class TestOSMParser {
 		assertEquals(result.get("N298884272"), r1.getMembers().get(3));
 		assertEquals("stop", r1.getMemberRole(result.get("N298884269")));
 		assertEquals("path", r1.getMemberRole(result.get("W26659127")));
+	}
+	
+	@Test
+	public void testParseFile() throws IOException, SAXException {
+		result = p1.parse(new File("test/xml/sample.osm"));
+		testSampleFile();
+	}
+	
+	@Test
+	public void testParseString() throws IOException, SAXException {
+		String osmXml = TestSuite.readTextFile(new File("test/xml/sample.osm"));
+		result = p1.parse(osmXml);
+		testSampleFile();
+	}
+	
+	@Test
+	public void testParseInputSource() throws IOException, SAXException {
+		String osmXml = TestSuite.readTextFile(new File("test/xml/sample.osm"));
+		result = p1.parse(new InputSource(new ByteArrayInputStream(osmXml.getBytes("UTF-8"))));
+		testSampleFile();
 	}
 	
 	@Test

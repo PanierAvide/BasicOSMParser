@@ -5,9 +5,9 @@ Read-me
 -------
 
 BasicOSMParser is a collection of Java classes allowing to parse raw OSM XML files.
-Then you are able to manipulate those Java objects in your program. This library is
-very simple to understand. It uses the default Java SAX parser (org.xml.sax).
-The application tests use JUnit 4 framework.
+Then you are able to manipulate those Java objects in your program. Some exports are
+also available : CSV, Hive. This library is very simple to understand. It uses the
+default Java SAX parser (org.xml.sax). The application tests use JUnit 4 framework.
 
 Installation
 ------------
@@ -22,6 +22,8 @@ import info.pavie.basicosmparser.model.*;
 
 Usage
 -----
+
+### In another project
 
 Here is a simple example of how to use the parser. You just need to create a new parser
 object, and then call the <code>parse</code> method.
@@ -45,6 +47,8 @@ Keys are in a specific format : a letter followed by several digits. The letter 
 of OSM object ('N' for nodes, 'W' for ways, 'R' for relations), and following digits are the OSM numeric ID.
 The read OSM objects are represented by Element objects, which can be Node, Way or Relation depending of the
 OSM object. You can access the different attributes of objects : ID, user ID, timestamp, version, object tags, ...
+
+You can also directly pass a string which contains XML content, or use an InputSource object.
 See the Javadoc of these classes for more details about the available methods.
 
 If you want to get parsed data as several CSV files, use a <code>CSVExporter</code> object :
@@ -57,12 +61,40 @@ exporter.export(result, new File("/output/path/for/csv/"));	//Throws IOException
 
 See the Javadoc of CSVExporter to know more about output CSV format.
 
+### In Hive (as a user-defined function)
+
+BasicOSMParser can be used to load OSM XML data into Hadoop (via Hive). To do so, use the following commands (in Hive) :
+
+```
+ADD JAR /path/to/basicosmparser.jar;
+CREATE TEMPORARY FUNCTION OSMImportNodes AS 'info.pavie.basicosmparser.controller.hive.HiveNodeExporter';
+CREATE TEMPORARY FUNCTION OSMImportWays AS 'info.pavie.basicosmparser.controller.hive.HiveWayExporter';
+CREATE TEMPORARY FUNCTION OSMImportRelations AS 'info.pavie.basicosmparser.controller.hive.HiveRelationExporter';
+CREATE TABLE osmdata(osm_content STRING) STORED AS TEXTFILE;
+LOAD DATA LOCAL INPATH '/path/to/data.osm' OVERWRITE INTO TABLE osmdata;
+SELECT OSMImportNodes(osm_content) FROM osmdata;
+SELECT OSMImportWays(osm_content) FROM osmdata;
+SELECT OSMImportRelations(osm_content) FROM osmdata;
+```
+
+That's all.
+
+### As a data consumer
+
+If you only want to use this parser to create CSV files, you can execute the JAR with the following command :
+
+```
+java -jar BasicOSMParser.jar /path/to/data.osm /path/to/output/folder/
+```
+
+The command will parse the given OSM XML file, and create the CSV files in the output folder.
+
 License
 -------
 
 Copyright 2014 Adrien PAVIE
 
-See COPYING for complete GPL3 license.
+See LICENSE for complete GPL3 license.
 
 BasicOSMParser is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

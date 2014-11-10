@@ -24,6 +24,7 @@ import info.pavie.basicosmparser.model.Node;
 import info.pavie.basicosmparser.model.Relation;
 import info.pavie.basicosmparser.model.Way;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -56,8 +57,8 @@ public class OSMParser extends DefaultHandler {
 	
 //OTHER METHODS
 	/**
-	 * Parses a XML file an creates OSM Java objects
-	 * @param f The OSM database extract, in XML format
+	 * Parses a XML file and creates OSM Java objects
+	 * @param f The OSM database extract, in XML format, as a file
 	 * @return The corresponding OSM objects as a Map. Keys are elements ID, and values are OSM elements objects.
 	 * @throws IOException If an error occurs during file reading
 	 * @throws SAXException If an error occurs during parsing
@@ -72,19 +73,46 @@ public class OSMParser extends DefaultHandler {
 			throw new IOException("Can't read file");
 		}
 		
+		return parse(new InputSource(new FileReader(f)));
+	}
+	
+	/**
+	 * Parses a XML file and creates OSM Java objects
+	 * @param s The OSM database extract, in XML format, as a String
+	 * @return The corresponding OSM objects as a Map. Keys are elements ID, and values are OSM elements objects.
+	 * @throws IOException If an error occurs during file reading
+	 * @throws SAXException If an error occurs during parsing
+	 */
+	public Map<String,Element> parse(String s) throws SAXException, IOException {
+		return parse(new InputSource(new ByteArrayInputStream(s.getBytes("UTF-8"))));
+	}
+	
+	/**
+	 * Parses a XML input and creates OSM Java objects
+	 * @param input The OSM database extract, in XML format, as an InputSource
+	 * @return The corresponding OSM objects as a Map. Keys are elements ID, and values are OSM elements objects.
+	 * @throws IOException If an error occurs during reading
+	 * @throws SAXException If an error occurs during parsing
+	 */
+	public Map<String,Element> parse(InputSource input) throws SAXException, IOException {
 		//Init elements set
 		elements = new HashMap<String,Element>();
-		
+
 		//Start parsing
 		XMLReader xr = XMLReaderFactory.createXMLReader();
 		xr.setContentHandler(this);
 		xr.setErrorHandler(this);
-	    FileReader r = new FileReader(f);
-	    xr.parse(new InputSource(r));
+	    xr.parse(input);
 		
 		return elements;
 	}
 	
+	/**
+	 * Get an object ID, in this format: X000000, where X is the object type (N for nodes, W for ways, R for relations).
+	 * @param type The object type (node, way or relation)
+	 * @param ref The object ID in a given type
+	 * @return The object ID, unique for all types
+	 */
 	private String getId(String type, String ref) {
 		String result = null;
 		

@@ -20,13 +20,12 @@
 package info.pavie.basicosmparser.controller;
 
 import static org.junit.Assert.assertEquals;
+import info.pavie.basicosmparser.TestSuite;
 import info.pavie.basicosmparser.model.Element;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
-import java.util.Scanner;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -57,7 +56,7 @@ public class TestCSVExporter {
 		exporter.export(data, output);
 		
 		//Test nodes.csv
-		result = readTextFile(new File(output.getPath()+File.separator+"nodes.csv"));
+		result = TestSuite.readTextFile(new File(output.getPath()+File.separator+"nodes.csv"));
 		expected =
 "ID;UserID;timestamp;isVisible;version;changesetID;latitude;longitude;tags\n"+
 "N298884269;46882;2008-09-21T21:37:45Z;true;1;676636;54.0901746;12.2482632;\"[]\"\n"+
@@ -68,7 +67,7 @@ public class TestCSVExporter {
 		assertEquals(expected, result);
 		
 		//Test ways.csv
-		result = readTextFile(new File(output.getPath()+File.separator+"ways.csv"));
+		result = TestSuite.readTextFile(new File(output.getPath()+File.separator+"ways.csv"));
 		expected =
 "ID;UserID;timestamp;isVisible;version;changesetID;nodes;tags\n"+
 "W26659127;55988;2010-03-16T11:47:08Z;true;5;4142606;\"[N298884269,N298884272,N261728686]\";\"[highway=unclassified,name=Pastower Straße]\"\n"
@@ -76,28 +75,11 @@ public class TestCSVExporter {
 		assertEquals(expected, result);
 		
 		//Test relations.csv
-		result = readTextFile(new File(output.getPath()+File.separator+"relations.csv"));
+		result = TestSuite.readTextFile(new File(output.getPath()+File.separator+"relations.csv"));
 		expected =
 "ID;UserID;timestamp;isVisible;version;changesetID;members;tags\n"+
 "R56688;56190;2011-01-12T14:23:49Z;true;28;6947637;\"[N298884269=stop,N261728686=null,W26659127=path,N298884272=null]\";\"[ref=123,route=bus,name=Küstenbus Linie 123,type=route,operator=Regionalverkehr Küste,network=VVW]\"\n"
 ;
 		assertEquals(expected, result);
-	}
-
-//OTHER METHODS
-	/**
-	 * Reads a text file, and returns it as a string
-	 * @param f The text file to read
-	 * @return The read text
-	 * @throws FileNotFoundException If file doesn't exist
-	 */
-	private String readTextFile(File f) throws FileNotFoundException {
-		Scanner s = new Scanner(f);
-		StringBuilder result = new StringBuilder();
-		while(s.hasNextLine()) {
-			result.append(s.nextLine()+"\n");
-		}
-		s.close();
-		return result.toString();
 	}
 }
