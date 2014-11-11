@@ -30,6 +30,7 @@ import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDTF;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
 import org.xml.sax.SAXException;
@@ -98,7 +99,9 @@ public abstract class HiveExporter extends GenericUDTF {
 		fieldOIs.add(PrimitiveObjectInspectorFactory.javaBooleanObjectInspector);
 		fieldOIs.add(PrimitiveObjectInspectorFactory.javaIntObjectInspector);
 		fieldOIs.add(PrimitiveObjectInspectorFactory.javaLongObjectInspector);
-		fieldOIs.add(PrimitiveObjectInspectorFactory.javaStringObjectInspector);
+		fieldOIs.add(ObjectInspectorFactory.getStandardMapObjectInspector(
+				PrimitiveObjectInspectorFactory.javaStringObjectInspector,
+				PrimitiveObjectInspectorFactory.javaStringObjectInspector));
 		
 		return fieldOIs;
 	}
@@ -139,20 +142,6 @@ public abstract class HiveExporter extends GenericUDTF {
 		row[3] = elem.isVisible();
 		row[4] = elem.getVersion();
 		row[5] = elem.getChangeset();
-		
-		//Save tags as an array
-		StringBuilder tags = new StringBuilder("[");
-		boolean firstTag = true;
-		for(String key : elem.getTags().keySet()) {
-			if(!firstTag) {
-				tags.append(",");
-			} else {
-				firstTag = false;
-			}
-			
-			tags.append(key+"="+elem.getTags().get(key));
-		}
-		tags.append("]");
-		row[6] = tags.toString();
+		row[6] = elem.getTags();
 	}
 }

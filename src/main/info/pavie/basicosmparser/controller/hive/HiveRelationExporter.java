@@ -4,6 +4,8 @@ import info.pavie.basicosmparser.model.Element;
 import info.pavie.basicosmparser.model.Relation;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
@@ -35,7 +37,9 @@ public class HiveRelationExporter extends HiveExporter {
 		
 		//Expected output types
 		ArrayList<ObjectInspector> fieldOIs = getCommonFieldOIs();
-		fieldOIs.add(PrimitiveObjectInspectorFactory.javaStringObjectInspector);
+		fieldOIs.add(ObjectInspectorFactory.getStandardMapObjectInspector(
+				PrimitiveObjectInspectorFactory.javaStringObjectInspector,
+				PrimitiveObjectInspectorFactory.javaStringObjectInspector));
 		
 		return ObjectInspectorFactory.getStandardStructObjectInspector(fieldNames, fieldOIs);
 	}
@@ -58,28 +62,17 @@ public class HiveRelationExporter extends HiveExporter {
 				Object[] currentRow = new Object[8];
 				fillRow(currentRow, current);
 				
-				//Create members list
-				StringBuilder memberList = new StringBuilder("[");
-				boolean firstElem = true;
-				
+				//Create members map
+				Map<String,String> members = new HashMap<String,String>();
 				for(Element e : ((Relation) current).getMembers()) {
-					if(!firstElem) {
-						memberList.append(",");
-					} else {
-						firstElem = false;
-					}
-					
-					//Member
-					memberList.append(e.getId()+"=");
-					
 					//Role
 					String role = ((Relation) current).getMemberRole(e);
 					if(role.equals("")) { role = "null"; }
-					memberList.append(role);
+					
+					members.put(e.getId(), role);
 				}
-				memberList.append("]");
 				
-				currentRow[7] = memberList.toString();
+				currentRow[7] = members;
 				
 				//Write into standard output
 				forward(currentRow);

@@ -5,6 +5,7 @@ import info.pavie.basicosmparser.model.Node;
 import info.pavie.basicosmparser.model.Way;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
@@ -36,7 +37,8 @@ public class HiveWayExporter extends HiveExporter {
 		
 		//Expected output types
 		ArrayList<ObjectInspector> fieldOIs = getCommonFieldOIs();
-		fieldOIs.add(PrimitiveObjectInspectorFactory.javaStringObjectInspector);
+		fieldOIs.add(ObjectInspectorFactory.getStandardListObjectInspector(
+				PrimitiveObjectInspectorFactory.javaStringObjectInspector));
 		
 		return ObjectInspectorFactory.getStandardStructObjectInspector(fieldNames, fieldOIs);
 	}
@@ -60,21 +62,13 @@ public class HiveWayExporter extends HiveExporter {
 				fillRow(currentRow, current);
 				
 				//Create nodes list
-				StringBuilder nodeList = new StringBuilder("[");
-				boolean firstNode = true;
+				List<String> nodeList = new ArrayList<String>();
 				
 				for(Node n : ((Way) current).getNodes()) {
-					if(!firstNode) {
-						nodeList.append(",");
-					} else {
-						firstNode = false;
-					}
-					
-					nodeList.append(n.getId());
+					nodeList.add(n.getId());
 				}
-				nodeList.append("]");
 				
-				currentRow[7] = nodeList.toString();
+				currentRow[7] = nodeList;
 				
 				//Write into standard output
 				forward(currentRow);
