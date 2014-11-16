@@ -19,12 +19,12 @@
 
 package info.pavie.basicosmparser;
 
+import info.pavie.basicosmparser.controller.TestCSVExporter;
+import info.pavie.basicosmparser.controller.TestOSMParser;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
-
-import info.pavie.basicosmparser.controller.TestCSVExporter;
-import info.pavie.basicosmparser.controller.TestOSMParser;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;

@@ -45,13 +45,13 @@ public class TestCSVExporter {
 	public void setUp() throws Exception {
 		exporter = new CSVExporter();
 		parser = new OSMParser();
-		data = parser.parse(new File("test/xml/sample.osm"));
+		data = parser.parse(new File("res/xml/sample.osm"));
 	}
 
 //TESTS
 	@Test
 	public void testExport() throws IOException {
-		File output = new File("test/");
+		File output = new File("res/");
 		String result, expected;
 		exporter.export(data, output);
 		

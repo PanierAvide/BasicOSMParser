@@ -126,27 +126,27 @@ public class TestOSMParser {
 	
 	@Test
 	public void testParseFile() throws IOException, SAXException {
-		result = p1.parse(new File("test/xml/sample.osm"));
+		result = p1.parse(new File("res/xml/sample.osm"));
 		testSampleFile();
 	}
 	
 	@Test
 	public void testParseString() throws IOException, SAXException {
-		String osmXml = TestSuite.readTextFile(new File("test/xml/sample.osm"));
+		String osmXml = TestSuite.readTextFile(new File("res/xml/sample.osm"));
 		result = p1.parse(osmXml);
 		testSampleFile();
 	}
 	
 	@Test
 	public void testParseInputSource() throws IOException, SAXException {
-		String osmXml = TestSuite.readTextFile(new File("test/xml/sample.osm"));
+		String osmXml = TestSuite.readTextFile(new File("res/xml/sample.osm"));
 		result = p1.parse(new InputSource(new ByteArrayInputStream(osmXml.getBytes("UTF-8"))));
 		testSampleFile();
 	}
 	
 	@Test
 	public void testParseVillage() throws IOException, SAXException {
-		result = p1.parse(new File("test/xml/bleruais.osm"));
+		result = p1.parse(new File("res/xml/bleruais.osm"));
 		Way single1 = (Way) result.get("W108790362");
 		assertEquals(2, single1.getNodes().size());
 		
