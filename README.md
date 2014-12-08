@@ -12,8 +12,9 @@ SAX parser (org.xml.sax). The application tests use JUnit 4 framework.
 Installation (for developers)
 ------------------------------
 
-In order to use BasicOSMParser, you have to put the content of src/main/ folder in the
-source directory of your project. Then, add this code in your classes to import the parser :
+In order to use BasicOSMParser, you can download the BasicOSMParser.jar file. Alternatively,
+you can put the content of src/main/ folder in the source directory of your project.
+Then, add this code in your classes to import the parser :
 
 ```
 import info.pavie.basicosmparser.controller.*;
@@ -35,7 +36,7 @@ File osmFile = new File("/path/to/your/data.osm");	//Create a file object for yo
 try {
 
 	Map<String,Element> result = p.parse(osmFile);		//Parse OSM data, and put result in a Map object
-	
+
 } catch (IOException | SAXException e) {
 	e.printStackTrace();								//Input/output errors management
 }
